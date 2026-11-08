@@ -1,0 +1,370 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-8175315-30"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-8175315-30');
+</script>
+
+  <meta charset="utf-8">
+  <title>Emission Spectra</title>
+</head>
+
+<body style="font-family:sans-serif; font-size:15px; width:700px; margin-left:auto; margin-right:auto;">
+<center>
+<H3>Emission Spectra</H3>
+    <canvas id="myCanvas" width="700" height="440"></canvas>
+    <div id="spectraButtons">Show emission spectrum for:
+      <input type="button" id="Hspectra" value="Hydrogen" onclick="elementChoice = 0; drawSpectra();">
+      <input type="button" id="Hespectra" value="Helium" onclick="elementChoice = 1; drawSpectra();">
+      <input type="button" id="Lispectra" value="Lithium" onclick="elementChoice = 4; drawSpectra();">
+      <input type="button" id="Naspectra" value="Sodium" onclick="elementChoice = 2; drawSpectra();">
+      <input type="button" id="Hgspectra" value="Mercury" onclick="elementChoice = 3; drawSpectra();">
+      <input type="button" id="Nespectra" value="Neon" onclick="elementChoice = 5; drawSpectra();">
+   </div>
+
+
+</center>
+
+  <script>
+
+// Simulation first posted on 2-08-2017
+
+
+
+      var canvas = document.getElementById("myCanvas");
+      var context = canvas.getContext("2d");
+      var xBase = 50;     // for the drawing
+      var yBase = 350;     // for the drawing
+      var lineColor = 'red';
+
+      var elementChoice = 0;
+
+      var nSpectra = 3;  // number of spectra
+      var nLines = new Array(nSpectra);
+      nLines[0] = {};
+      nLines[0].n = 4;   // number of wavelengths in hydrogen spectrum
+      nLines[1] = {};
+      nLines[1].n = 6;   // number of wavelengths in helium spectrum
+      nLines[2] = {};
+      nLines[2].n = 5;   // number of wavelengths in helium spectrum
+      nLines[3] = {};
+      nLines[3].n = 5;   // number of wavelengths in mercury spectrum
+      nLines[4] = {};
+      nLines[4].n = 5;   // number of wavelengths in lithium spectrum
+      nLines[5] = {};
+      nLines[5].n = 14;   // number of wavelengths in neon spectrum
+
+      var hydrogen = new Array(nLines[0].n);
+      hydrogen[0] = {};
+      hydrogen[0].wavelength = 656.3;   // line 1 wavelength
+      hydrogen[1] = {};
+      hydrogen[1].wavelength = 486.1;   // line 2 wavelength
+      hydrogen[2] = {};
+      hydrogen[2].wavelength = 434.0;   // line 3 wavelength
+      hydrogen[3] = {};
+      hydrogen[3].wavelength = 410.2;   // line 4 wavelength
+
+      var helium = new Array(nLines[1].n);
+      helium[0] = {};
+      helium[0].wavelength = 447.1;   // line 1 wavelength
+      helium[1] = {};
+      helium[1].wavelength = 471.3;   // line 2 wavelength
+      helium[2] = {};
+      helium[2].wavelength = 492.2;   // line 3 wavelength
+      helium[3] = {};
+      helium[3].wavelength = 501.6;   // line 4 wavelength
+      helium[4] = {};
+      helium[4].wavelength = 587.6;   // line 5 wavelength
+      helium[5] = {};
+      helium[5].wavelength = 667.8;   // line 6 wavelength
+
+      var sodium = new Array(nLines[2].n);
+      sodium[0] = {};
+      sodium[0].wavelength = 589;   // line 1 wavelength
+      sodium[1] = {};
+      sodium[1].wavelength = 589.6;   // line 2 wavelength
+      sodium[2] = {};
+      sodium[2].wavelength = 439.3;   // line 3 wavelength
+      sodium[3] = {};
+      sodium[3].wavelength = 445.5;   // line 4 wavelength
+      sodium[4] = {};
+      sodium[4].wavelength = 449.1;   // line 5 wavelength
+
+      var mercury = new Array(nLines[3].n);
+      mercury[0] = {};
+      mercury[0].wavelength = 435.8;   // line 1 wavelength
+      mercury[1] = {};
+      mercury[1].wavelength = 546.1;   // line 2 wavelength
+      mercury[2] = {};
+      mercury[2].wavelength = 577;   // line 3 wavelength
+      mercury[3] = {};
+      mercury[3].wavelength = 579.1;   // line 4 wavelength
+      mercury[4] = {};
+      mercury[4].wavelength = 408;   // line 5 wavelength
+
+      var lithium = new Array(nLines[4].n);
+      lithium[0] = {};
+      lithium[0].wavelength = 548.4;   // line 1 wavelength
+      lithium[1] = {};
+      lithium[1].wavelength = 610.3;   // line 2 wavelength
+      lithium[2] = {};
+      lithium[2].wavelength = 670.8;   // line 3 wavelength
+      lithium[3] = {};
+      lithium[3].wavelength = 468;   // line 4 wavelength
+      lithium[4] = {};
+      lithium[4].wavelength = 479;   // line 5 wavelength
+
+      var neon = new Array(nLines[5].n);
+      neon[0] = {};
+      neon[0].wavelength = 540.1;   // line 1 wavelength
+      neon[1] = {};
+      neon[1].wavelength = 585.2;   // line 2 wavelength
+      neon[2] = {};
+      neon[2].wavelength = 588.2;   // line 3 wavelength
+      neon[3] = {};
+      neon[3].wavelength = 603;   // line 4 wavelength
+      neon[4] = {};
+      neon[4].wavelength = 607.4;   // line 5 wavelength
+      neon[5] = {};
+      neon[5].wavelength = 616.4;   // line 6 wavelength
+      neon[6] = {};
+      neon[6].wavelength = 621.7;   // line 7 wavelength
+      neon[7] = {};
+      neon[7].wavelength = 626.6;   // line 8 wavelength
+      neon[8] = {};
+      neon[8].wavelength = 633.4;   // line 9 wavelength
+      neon[9] = {};
+      neon[9].wavelength = 638.3;   // line 10 wavelength
+      neon[10] = {};
+      neon[10].wavelength = 640.2;   // line 11 wavelength
+      neon[11] = {};
+      neon[11].wavelength = 650.6;   // line 12 wavelength
+      neon[12] = {};
+      neon[12].wavelength = 659.9;   // line 13 wavelength
+      neon[13] = {};
+      neon[13].wavelength = 692.9;   // line 14 wavelength
+
+
+      drawSpectra();
+
+    function drawSpectra() {
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag );
+
+        // set background color for the entire thing
+           context.fillStyle = "black";
+           context.fillRect(0, 0, canvas.width, canvas.height);
+
+          context.lineWidth = 2;
+          context.strokeStyle  = "white";
+          context.font = '14pt Calibri';
+          context.fillStyle = "white";
+
+          yBase = 150;   // for the visible spectrum
+
+         // draw an axis
+           context.beginPath();
+           context.moveTo(xBase, yBase);
+           context.lineTo(xBase+600, yBase);
+           context.stroke();
+
+         // draw and label the tick marks
+
+         for (var i = 0; i <= 6; i++) {
+           context.beginPath();
+           context.moveTo(xBase+i*100, yBase);
+           context.lineTo(xBase+i*100, yBase+10);
+           context.stroke();
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           var axisValue = 400+50*i;
+           var axisLabel = axisValue.toFixed(0);
+           context.fillText(axisLabel, xBase+i*100, yBase+20);
+
+          }
+           context.font = '18pt Calibri';
+           context.fillText("Wavelength (nm)", 0.5*canvas.width, yBase+44);
+           context.fillText("The Visible Spectrum", 0.5*canvas.width, 50);
+
+           context.lineWidth = 1;
+
+         // wavelength from 400 to 700 nm, draw the visible spectrum
+         for (var i = 0; i <= 600; i++) {
+           var wavelength = 400 + 0.5*i;
+           lineColor = getLineColor(wavelength);
+           context.strokeStyle  = lineColor;
+           context.beginPath();
+           context.moveTo(xBase+i, yBase);
+           context.lineTo(xBase+i, yBase-80);
+           context.stroke();
+          }
+
+          yBase = 355;
+
+          context.lineWidth = 2;
+          context.strokeStyle  = "white";
+          context.font = '14pt Calibri';
+          context.fillStyle = "white";
+
+         // draw an axis for the emission spectrum
+           context.beginPath();
+           context.moveTo(xBase, yBase);
+           context.lineTo(xBase+600, yBase);
+           context.stroke();
+
+         // draw and label the tick marks
+
+         for (var i = 0; i <= 6; i++) {
+           context.beginPath();
+           context.moveTo(xBase+i*100, yBase);
+           context.lineTo(xBase+i*100, yBase+10);
+           context.stroke();
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           var axisValue = 400+50*i;
+           var axisLabel = axisValue.toFixed(0);
+           context.fillText(axisLabel, xBase+i*100, yBase+20);
+
+          }
+           context.font = '18pt Calibri';
+           context.fillText("Wavelength (nm)", 0.5*canvas.width, yBase+44);
+
+          // draw one of the emission spectra
+
+            context.lineWidth = 3;
+
+          if (elementChoice == 0){
+            context.fillText("Hydrogen", 0.5*canvas.width, yBase-100);
+
+            for (var i = 0; i < nLines[elementChoice].n; i++) {
+             lineColor = getLineColor(hydrogen[i].wavelength);
+             context.strokeStyle  = lineColor;
+             context.beginPath();
+             context.moveTo(xBase+2*(hydrogen[i].wavelength-400), yBase);
+             context.lineTo(xBase+2*(hydrogen[i].wavelength-400), yBase-80);
+             context.stroke();
+            }
+          }
+
+          if (elementChoice == 1){
+            context.fillText("Helium", 0.5*canvas.width, yBase-100);
+
+            for (var i = 0; i < nLines[elementChoice].n; i++) {
+             lineColor = getLineColor(helium[i].wavelength);
+             context.strokeStyle  = lineColor;
+             context.beginPath();
+             context.moveTo(xBase+2*(helium[i].wavelength-400), yBase);
+             context.lineTo(xBase+2*(helium[i].wavelength-400), yBase-80);
+             context.stroke();
+            }
+          }
+
+          if (elementChoice == 2){
+            context.fillText("Sodium", 0.5*canvas.width, yBase-100);
+
+            for (var i = 0; i < nLines[elementChoice].n; i++) {
+             lineColor = getLineColor(sodium[i].wavelength);
+             context.strokeStyle  = lineColor;
+             context.beginPath();
+             context.moveTo(xBase+2*(sodium[i].wavelength-400), yBase);
+             context.lineTo(xBase+2*(sodium[i].wavelength-400), yBase-80);
+             context.stroke();
+            }
+          }
+
+          if (elementChoice == 3){
+            context.fillText("Mercury", 0.5*canvas.width, yBase-100);
+
+            for (var i = 0; i < nLines[elementChoice].n; i++) {
+             lineColor = getLineColor(mercury[i].wavelength);
+             context.strokeStyle  = lineColor;
+             context.beginPath();
+             context.moveTo(xBase+2*(mercury[i].wavelength-400), yBase);
+             context.lineTo(xBase+2*(mercury[i].wavelength-400), yBase-80);
+             context.stroke();
+            }
+          }
+
+          if (elementChoice == 4){
+            context.fillText("Lithium", 0.5*canvas.width, yBase-100);
+
+            for (var i = 0; i < nLines[elementChoice].n; i++) {
+             lineColor = getLineColor(lithium[i].wavelength);
+             context.strokeStyle  = lineColor;
+             context.beginPath();
+             context.moveTo(xBase+2*(lithium[i].wavelength-400), yBase);
+             context.lineTo(xBase+2*(lithium[i].wavelength-400), yBase-80);
+             context.stroke();
+            }
+          }
+
+          if (elementChoice == 5){
+            context.fillText("Neon", 0.5*canvas.width, yBase-100);
+
+            for (var i = 0; i < nLines[elementChoice].n; i++) {
+             lineColor = getLineColor(neon[i].wavelength);
+             context.strokeStyle  = lineColor;
+             context.beginPath();
+             context.moveTo(xBase+2*(neon[i].wavelength-400), yBase);
+             context.lineTo(xBase+2*(neon[i].wavelength-400), yBase-80);
+             context.stroke();
+            }
+          }
+
+
+    }
+
+
+    function getLineColor(lambda) {
+        var redness = 0;
+        if (lambda <= 500) redness = Math.floor(160-160*(lambda-400)/100);
+        if ((lambda >= 558) && (lambda < 590))redness = Math.floor(255-255*(590-lambda)*(590-lambda)/(32*32));
+        if (lambda >= 590) redness = 255;
+        if (lambda >= 650) redness = Math.floor(255-2*(lambda-650));
+
+        var redString = redness.toString(16);
+        if (redString.length == 1) redString = "0"+redString;
+        var greenness = 0;
+        if ((lambda > 460) && (lambda < 500)) greenness = Math.floor(255 - 255*(500 - lambda)*(500-lambda)/1600);
+        if ((lambda >= 500) && (lambda <=  570))    greenness = 255;
+        if ((lambda > 570) && (lambda <=  640))    greenness = Math.floor(255-255*(lambda-570)*(lambda-570)/(70*70));
+        var greenString = greenness.toString(16);
+        if (greenString.length == 1) greenString = "0"+greenString;
+        var blueness = 0;
+        if (lambda < 460) blueness = 255;
+        if ((lambda >= 460) && (lambda < 550)) blueness = Math.floor(255 - 255*(lambda-460)*(lambda-460)/(90*90));
+        var blueString = blueness.toString(16);
+        if (blueString.length == 1) blueString = "0"+blueString;
+//        console.log(lambda + " " + redness + " " + greenness + " " +blueness);
+        var newlineColor = "#" + redString+greenString+blueString;
+        return newlineColor;
+
+    }
+
+
+  </script>
+
+  <p>This is a simulation of the light emitted by excited gas atoms of particular elements. In some sense,
+  these are atomic fingerprints. Note that the lines shown are the brightest lines in a spectrum - you
+  may be able to see additional lines if you look at the spectrum from a real gas tube. In addition, the observed color
+  could be a bit different from what is shown here. The visible spectrum is always shown as a reference.
+</p>
+
+    <p>Simulation first posted on 2-8-2017. Written by Andrew Duffy</p>
+
+  <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">work</span> by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Andrew Duffy</span> is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.<br />This simulation can be found in the collection at <a xmlns:dct="http://purl.org/dc/terms/" href="http://physics.bu.edu/~duffy/classroom.html" rel="dct:source">http://physics.bu.edu/~duffy/classroom.html</a>.
+  
+                <p>The counter has been running on this page since 8-14-2018. The number of people accessing the page since then is:
+<br><img src="http://physics.bu.edu/cgi-bin/Count.cgi?df=emission_spectra.dat" align="absmiddle">
+
+
+</body>
+</html>

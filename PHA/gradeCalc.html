@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Grade Calculator</title>
+</head>
+
+
+<body style="font-family:sans-serif; font-size:15px;">
+
+<H1 style = "text-align:center;">Spring 2024 Final Grade Calculator</H1>
+
+<div style = "max-width: 850px; margin: auto;">
+
+        <br />
+        <h2>Get the following info from Blackboard:</h2>
+		Look at "Grade as of Week 15 + Test 1 + Test 2" - the upper number in bold is how many points you have right now, and the lower number in gray is the number of points possible. 
+		<p> 
+        How many points do you have right now? <input type="text" id= "enumerator" size="10"/>
+        <br /><br />
+        Out of how many points possible? <input type= "text" id = "denominator" size="10"/>
+        </p>
+
+		<br />
+        <h2>Your Grade Right Now (before the test)</h2>
+        <p>Percentage is: 
+        <input type="text" id="percentgrade" size="10">
+        Letter is: <input type="text" id="letter" size="10">
+        </p>
+        
+        <br />
+        <h2>What you need to make on Test 3 <SPAN STYLE="font-size:70%">(out of 100)</SPAN></h2>
+        
+        <table border=1 cellpadding=5 cellspacing=0>
+        <tr><th>to get this grade</th><th>you need this on test 3</th></tr>
+        <tr><td style = "text-align:center;">A (88%)</td><td><input type="text" id="agrade" size="30"></td></tr>
+        <tr><td style = "text-align:center;">B (78%)</td><td><input type="text" id="bgrade" size="30"></td></tr>
+        <tr><td style = "text-align:center;">C (68%)</td><td><input type="text" id="cgrade" size="30"></td></tr>
+        <tr><td style = "text-align:center;">D (58%)</td><td><input type="text" id="dgrade" size="30"></td></tr>
+        </table>
+        
+        <h2>Note that I've shifted the grading scale down by 2%</h2>
+        <p>It has been a rough semester and I thought, in order to give everyone a little bit of a break, I could help by shifting the course grading scale down by 2%.  Those are the cutoffs that this grade calculator uses.  I don't anticipate shifting the grading scale any further (so if you get a 77.3, for example, you will end up with a C) </p>
+        
+</div>
+
+<script>
+var elements = {
+  enumerator: document.getElementById('enumerator'),
+  denominator: document.getElementById('denominator'),
+  percentgrade: document.getElementById('percentgrade'),
+  agrade: document.getElementById('agrade'),
+  bgrade: document.getElementById('bgrade'),
+  cgrade: document.getElementById('cgrade'),
+  dgrade: document.getElementById('dgrade'),
+  letter: document.getElementById('letter')
+};
+
+var gradescale = {
+  a: 88,
+  b: 78,
+  c: 68,
+  d: 58,
+};
+
+var gradeLevels = [
+  { min: gradescale.a, letter: 'A' },
+  { min: gradescale.b, letter: 'B' },
+  { min: gradescale.c, letter: 'C' },
+  { min: gradescale.d, letter: 'D' },
+];
+
+elements.enumerator.addEventListener('keyup', setGrades);
+elements.denominator.addEventListener('keyup', setGrades);
+
+function setGrades () {
+  
+  var grade = {
+    obtained: parseFloat(elements.enumerator.value),
+    possible: parseFloat(elements.denominator.value)
+  };
+  
+  grade.percentage = ((grade.obtained / grade.possible) * 100).toFixed(1);
+  grade.finaltotal = grade.possible + 100;
+  
+  grade.togetA = (((gradescale.a / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  grade.togetB = (((gradescale.b / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  grade.togetC = (((gradescale.c / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  grade.togetD = (((gradescale.d / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  
+  if (isNaN(grade.percentage)) {
+  	elements.percentgrade.value = '---';
+    elements.letter.value = '---';
+    return;
+  }
+  
+/*  
+  if (grade.percentage > 100) {
+  	console.log(grade.percentage);
+    elements.percentgrade.value = 'Sorry, it is not possible to have a grade over 100%';
+    elements.letter.value = '';
+    return;
+  } 
+*/
+
+/*
+  if (grade.togetA > 100) {
+    elements.agrade.value = grade.togetA.toString() + ' not possible';
+    return;
+    }
+*/
+	
+  //grade.letter = getLetterGrade(grade.percentage);
+
+  elements.percentgrade.value = grade.percentage;
+  //elements.letter.value = grade.letter;
+  elements.letter.value = getLetterGrade(grade.percentage);
+  //elements.agrade.value = grade.togetA;
+  elements.agrade.value = isPossible(grade.togetA);
+  elements.bgrade.value = isPossible(grade.togetB);
+  elements.cgrade.value = isPossible(grade.togetC);
+  elements.dgrade.value = isPossible(grade.togetD);
+}
+
+function getLetterGrade (percentage) {
+
+  for (var i in gradeLevels) {
+    if (percentage >= gradeLevels[i].min) {
+      return gradeLevels[i].letter;
+    }
+  }
+
+  return 'F';
+}
+
+function isPossible (checkGrade) {
+	if (checkGrade > 100) {
+     return checkGrade.toString() + ' not possible';
+    }
+    if (checkGrade < 0){
+     return 'you have this without test 3'
+    }
+    return checkGrade;
+}
+
+
+
+</script>
+
+</body>
+</html>

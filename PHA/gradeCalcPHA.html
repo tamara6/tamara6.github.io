@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Grade Calculator</title>
+</head>
+
+
+<body style="font-family:sans-serif; font-size:15px;">
+
+<H1 style = "text-align:center;">Spring 2024 Grade Calculator</H1>
+
+<div style = "max-width: 850px; margin: auto;">
+<p> This is designed to let you play around with numbers for the tests and homework, to see what you would end up with as a final letter grade. </p>
+
+        <br />
+        <h2>Get the following info from Blackboard (or make up numbers if you are just trying to play around with grades in the class):</h2>
+        
+        <p>
+        
+        Test 1 <input type="text" id= "test1" size="10"/>
+         <br /><br />
+        Test 2 <input type="text" id= "test2" size="10"/>
+         <br /><br />
+        Test 3 <input type="text" id= "test3" size="10"/>
+         <br /><br />
+        
+        Homework Points (88 max) <input type="text" id= "hw" size="10"/>
+        
+         <br /><br />
+        
+        Bonus Points (blogs, journal, syllabus quiz) <input type="text" id= "bonus" size="10"/>
+        </p>
+		
+
+		<br />
+        <h2>Your grade based on these numbers</h2>
+        <p>
+        Total number of points: <input type="text" id="totalpoints" size="10"> 
+        <br /><br />
+        Percentage is: 
+        <input type="text" id="percentgrade" size="10">
+        Letter is: <input type="text" id="letter" size="10">
+        </p>
+        
+         <br /><br />
+         
+        <H2>Grading Scale</h2>
+        <p>
+        <table>
+	<thead>
+	<tr> <th>Letter</th>	<th>Points</th> </tr>
+	</thead>
+	<tbody>
+	<tr> <td>A</td>	<td>341+</td> </tr>
+	<tr> <td>B</td>	<td>303-340.9</td> </tr>
+	<tr> <td>C</td>	<td>263-302.9</td> </tr>
+	<tr> <td>D</td>	<td>225-262.9</td> </tr>
+	<tr> <td>F</td>	<td>below 225</td> </tr>
+	</tbody>
+</table>
+
+
+
+        
+        
+</div>
+
+<script>
+var elements = {
+  test1: document.getElementById('test1'),
+  test2: document.getElementById('test2'),
+  test3: document.getElementById('test3'),
+  hw: document.getElementById('hw'),
+  bonus: document.getElementById('bonus'),
+  percentgrade: document.getElementById('percentgrade'),
+  letter: document.getElementById('letter'),
+  totalpoints: document.getElementById('totalpoints')
+};
+
+var gradescale = {
+  a: 87.89,
+  b: 78.09,
+  c: 67.78,
+  d: 57.99,
+};
+
+var gradeLevels = [
+  { min: gradescale.a, letter: 'A' },
+  { min: gradescale.b, letter: 'B' },
+  { min: gradescale.c, letter: 'C' },
+  { min: gradescale.d, letter: 'D' },
+];
+
+elements.test1.addEventListener('keyup', setGrades);
+elements.test2.addEventListener('keyup', setGrades);
+elements.test3.addEventListener('keyup', setGrades);
+elements.hw.addEventListener('keyup', setGrades);
+elements.bonus.addEventListener('keyup', setGrades);
+
+function setGrades () {
+  
+  var grade = {
+    test1: parseFloat(elements.test1.value),
+    test2: parseFloat(elements.test2.value),
+    test3: parseFloat(elements.test3.value),
+    hw: parseFloat(elements.hw.value),
+    bonus: parseFloat(elements.bonus.value),
+    possible: 388.0,
+  };
+  
+  grade.obtained = grade.test1 + grade.test2 + grade.test3 + grade.hw + grade.bonus;
+  grade.percentage = ((grade.obtained / grade.possible) * 100).toFixed(1);
+  grade.finaltotal = grade.possible + 100;
+  
+  /*
+  grade.togetA = (((gradescale.a / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  grade.togetB = (((gradescale.b / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  grade.togetC = (((gradescale.c / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  grade.togetD = (((gradescale.d / 100) * grade.finaltotal) - grade.obtained).toFixed(1);
+  */
+  
+  if (isNaN(grade.percentage)) {
+  	elements.percentgrade.value = '---';
+    elements.letter.value = '---';
+    elements.totalpoints.value = '---';
+    return;
+  }
+  
+/*  
+  if (grade.percentage > 100) {
+  	console.log(grade.percentage);
+    elements.percentgrade.value = 'Sorry, it is not possible to have a grade over 100%';
+    elements.letter.value = '';
+    return;
+  } 
+*/
+
+/*
+  if (grade.togetA > 100) {
+    elements.agrade.value = grade.togetA.toString() + ' not possible';
+    return;
+    }
+*/
+	
+  //grade.letter = getLetterGrade(grade.percentage);
+
+  elements.percentgrade.value = grade.percentage;
+  //elements.letter.value = grade.letter;
+  elements.letter.value = getLetterGrade(grade.percentage);
+  elements.totalpoints.value = grade.obtained.toFixed(1);
+  //elements.agrade.value = grade.togetA;
+ // elements.agrade.value = isPossible(grade.togetA);
+  //elements.bgrade.value = isPossible(grade.togetB);
+ // elements.cgrade.value = isPossible(grade.togetC);
+ // elements.dgrade.value = isPossible(grade.togetD);
+}
+
+function getLetterGrade (percentage) {
+
+  for (var i in gradeLevels) {
+    if (percentage >= gradeLevels[i].min) {
+      return gradeLevels[i].letter;
+    }
+  }
+
+  return 'F';
+}
+
+/*
+function isPossible (checkGrade) {
+	if (checkGrade > 100) {
+     return checkGrade.toString() + ' not possible';
+    }
+    if (checkGrade < 0){
+     return 'you have this without test 3'
+    }
+    return checkGrade;
+}
+*/
+
+
+</script>
+
+</body>
+</html>
