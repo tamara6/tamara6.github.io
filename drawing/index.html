@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Drawing Tool</title>
+    <style>
+        :root {
+            --panel-height: 58px;
+            --accent: #2563eb;
+            --green: #16a34a;
+            --red: #dc2626;
+            --amber: #d97706;
+            --purple: #7c3aed;
+            --toolbar-bg: #1e293b;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body, html {
+            margin:0; padding:0; height:100%; width:100%;
+            overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif;
+        }
+
+        /* ── Toolbar ── */
+        #toolbar {
+            height:var(--panel-height); background:var(--toolbar-bg);
+            display:flex; align-items:center; padding:0 16px; gap:6px;
+            position:relative; z-index:200; box-shadow:0 2px 8px rgba(0,0,0,.3);
+        }
+        .sep { width:1px; height:28px; background:#334155; margin:0 4px; flex-shrink:0; }
+        .toolbar-label {
+            font-size:10px; font-weight:700; letter-spacing:.08em;
+            color:#94a3b8; text-transform:uppercase; margin-right:2px; white-space:nowrap;
+        }
+        .tb-btn {
+            display:flex; align-items:center; gap:5px; padding:6px 11px;
+            border:none; border-radius:6px; font-size:13px; font-weight:600;
+            cursor:pointer; transition:background .15s,color .15s;
+            white-space:nowrap; color:#cbd5e1; background:transparent; flex-shrink:0;
+        }
+        .tb-btn:hover  { background:#334155; color:#f1f5f9; }
+        .tb-btn.active { background:var(--accent); color:white; }
+        .tb-btn.green  { color:#86efac; }
+        .tb-btn.green:hover,  .tb-btn.green.active  { background:var(--green);  color:white; }
+        .tb-btn.amber  { color:#fcd34d; }
+        .tb-btn.amber:hover                          { background:var(--amber);  color:white; }
+        .tb-btn.purple { color:#c4b5fd; }
+        .tb-btn.purple:hover                         { background:var(--purple); color:white; }
+        .tb-btn.red    { color:#fca5a5; }
+        .tb-btn.red:hover, .tb-btn.red.active        { background:var(--red);    color:white; }
+        .tb-btn.disabled { opacity:.35; cursor:not-allowed; pointer-events:none; }
+        #deleteBtn { margin-left:auto; }
+
+        /* ── Canvas ── */
+        #canvas {
+            width:100vw; height:calc(100vh - var(--panel-height));
+            position:relative; background:white; overflow:hidden;
+        }
+        #canvas.mode-draw-rect,
+        #canvas.mode-draw-arrow { cursor:crosshair; }
+
+        /* ── Shapes ── */
+        .shape {
+            position:absolute; box-sizing:border-box;
+            user-select:none; transform-origin:center center;
+        }
+        .shape.selected { outline:2px solid var(--accent); outline-offset:3px; z-index:50; }
+
+        /* Rectangle */
+        .rect { background:white; border:3px solid #1e293b; }
+        .rect::after {
+            content:""; position:absolute; width:100%; height:2px;
+            top:50%; transform:translateY(-50%);
+            background-image:repeating-linear-gradient(
+                to right,#1e293b 0,#1e293b 8px,transparent 8px,transparent 13px);
+            pointer-events:none;
+        }
+
+        /* Arrow */
+        .arrow-svg {
+            pointer-events:none; overflow:visible; position:absolute;
+            top:0; left:0; width:100%; height:100%;
+        }
+        .arrow-path { fill:white; stroke:#1e293b; stroke-width:3; stroke-linejoin:round; }
+        .arrow-dash  { stroke:#1e293b; stroke-width:2; stroke-dasharray:8 5; fill:none; }
+
+        /* Text inputs */
+        .shape-input {
+            position:absolute; left:50%; transform:translate(-50%,-50%);
+            width:82%; background:transparent; border:none; text-align:center;
+            font-size:14px; font-family:inherit; font-weight:500; color:#1e293b;
+            outline:none; pointer-events:none; z-index:10;
+        }
+        .rect-label-input {
+            position:absolute; top:-36px; left:50%; transform:translateX(-50%);
+            width:140%; background:transparent; border:none; text-align:center;
+            font-size:15px; font-weight:700; font-family:inherit; color:#1e293b;
+            outline:none; pointer-events:none; z-index:10; white-space:nowrap;
+        }
+        .rect .top-input    { top:28%; }
+        .rect .bottom-input { top:72%; }
+        .arrow .top-input    { top:32%; left:5px; transform:translateY(-50%); text-align:center; }
+        .arrow .bottom-input { top:68%; left:5px; transform:translateY(-50%); text-align:center; }
+
+        .mode-edit .shape-input,
+        .mode-edit .rect-label-input { pointer-events:auto; cursor:text; }
+
+        /* Handles */
+        .handle { display:none; position:absolute; z-index:60; border:2px solid white; }
+
+        /* Resize handle — bottom-right */
+        .resizer {
+            width:12px; height:12px; background:var(--accent);
+            right:-6px; bottom:-6px; cursor:nwse-resize; border-radius:3px;
+        }
+
+        /* Rotation handle — upper-right, away from label area */
+        .rotator {
+            width:14px; height:14px; background:var(--green);
+            top:-6px; right:-22px;
+            cursor:alias; border-radius:50%;
+        }
+
+        .mode-edit .shape:hover .handle,
+        .mode-edit .shape.selected .handle { display:block; }
+
+        /* Dim label */
+        .dim-label {
+            display:none; position:absolute; top:-50px; left:0;
+            font-size:11px; font-weight:700; color:white; white-space:nowrap;
+            background:#1e293b; padding:3px 8px; border-radius:4px; pointer-events:none;
+        }
+        .arrow .dim-label { top:-42px; }
+        .shape.selected .dim-label,
+        .shape.active-action .dim-label { display:block; }
+
+        /* Toast */
+        #toast {
+            position:fixed; bottom:24px; left:50%;
+            transform:translateX(-50%) translateY(80px);
+            background:#1e293b; color:white; padding:10px 20px;
+            border-radius:8px; font-size:13px; font-weight:600;
+            transition:transform .3s ease; z-index:9999; pointer-events:none;
+            box-shadow:0 4px 16px rgba(0,0,0,.2);
+        }
+        #toast.show { transform:translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <span class="toolbar-label">Draw</span>
+    <button class="tb-btn active" id="drawRectBtn">▭ Rectangle</button>
+    <button class="tb-btn"        id="drawArrowBtn">➤ Arrow</button>
+
+    <div class="sep"></div>
+    <span class="toolbar-label">Mode</span>
+    <button class="tb-btn" id="editBtn">✎ Edit</button>
+
+    <div class="sep"></div>
+    <button class="tb-btn disabled" id="undoBtn">↩ Undo</button>
+
+    <div class="sep"></div>
+    <span class="toolbar-label">File</span>
+    <button class="tb-btn amber"  id="saveBtn">💾 Save</button>
+    <button class="tb-btn purple" id="loadBtn">📂 Load</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none">
+    <button class="tb-btn green"  id="exportBtn">⬇ Export PNG</button>
+
+    <button class="tb-btn red disabled" id="deleteBtn">✕ Delete</button>
+</div>
+
+<div id="canvas" class="mode-draw-rect"></div>
+<div id="toast"></div>
+
+<script>
+const canvas    = document.getElementById('canvas');
+const deleteBtn = document.getElementById('deleteBtn');
+const undoBtn   = document.getElementById('undoBtn');
+
+const modeButtons = ['drawRectBtn','drawArrowBtn','editBtn'].map(id => document.getElementById(id));
+
+let mode = 'draw-rect';
+let currentShape = null;
+let selectedShape = null;
+let action = null;
+let startX, startY, initialWidth, initialHeight, initialLeft, initialTop;
+let undoStack = [];
+
+// ── Toast ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── Undo ──────────────────────────────────────────────
+function pushUndo() {
+    undoStack.push(serializeShapes());
+    if (undoStack.length > 50) undoStack.shift();
+    undoBtn.disabled = false;
+    undoBtn.classList.remove('disabled');
+}
+
+function doUndo() {
+    if (!undoStack.length) return;
+    loadShapes(undoStack.pop());
+    if (!undoStack.length) { undoBtn.disabled = true; undoBtn.classList.add('disabled'); }
+    showToast('Undone');
+}
+
+undoBtn.addEventListener('click', doUndo);
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); doUndo(); }
+    if (e.key==='Delete' && selectedShape) deleteCurrent();
+});
+
+// ── Mode ──────────────────────────────────────────────
+modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        modeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        mode = btn.id.replace('Btn','').toLowerCase().replace('draw','draw-');
+        canvas.className = `mode-${mode}`;
+        if (mode !== 'edit') deselect();
+    });
+});
+
+// ── Selection ─────────────────────────────────────────
+function selectShape(el) {
+    deselect(); selectedShape = el;
+    el.classList.add('selected');
+    deleteBtn.classList.remove('disabled');
+}
+function deselect() {
+    if (selectedShape) selectedShape.classList.remove('selected');
+    selectedShape = null;
+    deleteBtn.classList.add('disabled');
+}
+function deleteCurrent() {
+    if (!selectedShape) return;
+    pushUndo(); selectedShape.remove(); deselect();
+}
+deleteBtn.addEventListener('click', deleteCurrent);
+
+// ── Helpers ───────────────────────────────────────────
+function updateLabels(el) {
+    const lbl = el.querySelector('.dim-label'); if (!lbl) return;
+    const deg = Math.round(parseFloat(el.dataset.displayDeg)||0);
+    lbl.textContent = `${el.offsetWidth} × ${el.offsetHeight}  ${Object.is(deg,-0)?0:deg}°`;
+}
+
+function updateArrow(el, w, h) {
+    const path=el.querySelector('.arrow-path'), dash=el.querySelector('.arrow-dash');
+    const headW=Math.min(60,w*.35), wing=22, cy=h/2;
+    const shaft=Math.max(4,h-wing*2), hStart=Math.max(0,w-headW);
+    path.setAttribute('d',
+        `M 0,${cy-shaft/2} L ${hStart},${cy-shaft/2} L ${hStart},0
+         L ${w},${cy} L ${hStart},${h} L ${hStart},${cy+shaft/2} L 0,${cy+shaft/2} Z`);
+    dash.setAttribute('x1',0); dash.setAttribute('y1',cy);
+    dash.setAttribute('x2',w-4); dash.setAttribute('y2',cy);
+    const ti=el.querySelector('.top-input'), bi=el.querySelector('.bottom-input');
+    if (ti) { ti.style.width=`${Math.max(30,hStart-10)}px`; ti.style.top=`${h*.32}px`; }
+    if (bi) { bi.style.width=`${Math.max(30,hStart-10)}px`; bi.style.top=`${h*.68}px`; }
+}
+
+function createShapeEl(type) {
+    const el = document.createElement('div');
+    el.classList.add('shape', type);
+    el.dataset.rotation='0'; el.dataset.displayDeg='0';
+    const inner = `
+        <input type="text" class="shape-input top-input"    placeholder="Top text">
+        <input type="text" class="shape-input bottom-input" placeholder="Bottom text">
+        <div class="dim-label"></div>
+        <div class="handle resizer"></div>
+        <div class="handle rotator"></div>`;
+    el.innerHTML = type==='rect'
+        ? `<input type="text" class="rect-label-input" placeholder="Label (optional)">` + inner
+        : `<svg class="arrow-svg"><path class="arrow-path"></path><line class="arrow-dash"></line></svg>` + inner;
+    return el;
+}
+
+// ── Mouse events ──────────────────────────────────────
+canvas.addEventListener('mousedown', e => {
+    const b=canvas.getBoundingClientRect();
+    const mx=e.clientX-b.left, my=e.clientY-b.top;
+
+    if (e.target.matches('.shape-input,.rect-label-input')) {
+        if (mode==='edit') { const t=e.target.closest('.shape'); if(t) selectShape(t); }
+        return;
+    }
+
+    if (mode==='edit') {
+        const target=e.target.closest('.shape');
+        if      (e.target.classList.contains('resizer')) { action='resizing'; currentShape=target; selectShape(target); }
+        else if (e.target.classList.contains('rotator')) { action='rotating'; currentShape=target; selectShape(target); }
+        else if (target) { action='moving'; currentShape=target; selectShape(target); }
+        else deselect();
+    } else {
+        pushUndo(); action='drawing';
+        currentShape = createShapeEl(mode==='draw-rect'?'rect':'arrow');
+        currentShape.style.cssText = `left:${mx}px;top:${my}px;width:4px;height:4px`;
+        canvas.appendChild(currentShape);
+    }
+
+    if (currentShape) {
+        startX=mx; startY=my;
+        initialWidth=currentShape.offsetWidth; initialHeight=currentShape.offsetHeight;
+        initialLeft=parseFloat(currentShape.style.left); initialTop=parseFloat(currentShape.style.top);
+        currentShape.classList.add('active-action');
+    }
+});
+
+window.addEventListener('mousemove', e => {
+    if (!action || !currentShape) return;
+    const b=canvas.getBoundingClientRect();
+    const mx=e.clientX-b.left, my=e.clientY-b.top;
+    const dx=mx-startX, dy=my-startY;
+
+    if (action==='rotating') {
+        const cx=parseFloat(currentShape.style.left)+currentShape.offsetWidth/2;
+        const cy=parseFloat(currentShape.style.top)+currentShape.offsetHeight/2;
+        const angle=Math.atan2(my-cy,mx-cx)*(180/Math.PI);
+        const visual=angle+90, norm=((visual+180)%360+360)%360-180;
+        currentShape.style.transform=`rotate(${visual}deg)`;
+        currentShape.dataset.rotation=visual; currentShape.dataset.displayDeg=-norm;
+    } else if (action==='resizing') {
+        const w=Math.max(60,initialWidth+dx), h=Math.max(40,initialHeight+dy);
+        currentShape.style.width=`${w}px`; currentShape.style.height=`${h}px`;
+        if (currentShape.classList.contains('arrow')) updateArrow(currentShape,w,h);
+    } else if (action==='moving') {
+        const cW=canvas.offsetWidth, cH=canvas.offsetHeight;
+        currentShape.style.left=`${Math.max(0,Math.min(cW-currentShape.offsetWidth, initialLeft+dx))}px`;
+        currentShape.style.top =`${Math.max(0,Math.min(cH-currentShape.offsetHeight,initialTop +dy))}px`;
+    } else if (action==='drawing') {
+        const w=Math.max(60,Math.abs(dx)), h=Math.max(40,Math.abs(dy));
+        currentShape.style.left=`${Math.min(mx,startX)}px`; currentShape.style.top=`${Math.min(my,startY)}px`;
+        currentShape.style.width=`${w}px`; currentShape.style.height=`${h}px`;
+        if (currentShape.classList.contains('arrow')) updateArrow(currentShape,w,h);
+    }
+    updateLabels(currentShape);
+});
+
+window.addEventListener('mouseup', () => {
+    if (currentShape) {
+        currentShape.classList.remove('active-action');
+        if (action==='drawing' && currentShape.offsetWidth<20 && currentShape.offsetHeight<20) {
+            currentShape.remove(); if(undoStack.length) undoStack.pop();
+        }
+    }
+    currentShape=null; action=null;
+});
+
+window.addEventListener('mouseleave', () => {
+    if (currentShape) currentShape.classList.remove('active-action');
+    currentShape=null; action=null;
+});
+
+// ── Serialise / Deserialise ───────────────────────────
+function serializeShapes() {
+    return [...canvas.querySelectorAll('.shape')].map(s => ({
+        type:       s.classList.contains('rect')?'rect':'arrow',
+        left:       s.style.left, top:s.style.top,
+        width:      s.offsetWidth, height:s.offsetHeight,
+        rotation:   s.dataset.rotation   ||'0',
+        displayDeg: s.dataset.displayDeg ||'0',
+        topText:    s.querySelector('.top-input')?.value        ||'',
+        bottomText: s.querySelector('.bottom-input')?.value     ||'',
+        labelText:  s.querySelector('.rect-label-input')?.value ||'',
+    }));
+}
+
+function loadShapes(data) {
+    canvas.querySelectorAll('.shape').forEach(s=>s.remove()); deselect();
+    data.forEach(d => {
+        const el=createShapeEl(d.type);
+        el.style.left=d.left; el.style.top=d.top;
+        el.style.width=`${d.width}px`; el.style.height=`${d.height}px`;
+        el.style.transform=`rotate(${d.rotation}deg)`;
+        el.dataset.rotation=d.rotation; el.dataset.displayDeg=d.displayDeg;
+        el.querySelector('.top-input').value    = d.topText    ||'';
+        el.querySelector('.bottom-input').value = d.bottomText ||'';
+        const lab=el.querySelector('.rect-label-input'); if(lab) lab.value=d.labelText||'';
+        canvas.appendChild(el);
+        if (d.type==='arrow') updateArrow(el,d.width,d.height);
+        updateLabels(el);
+    });
+}
+
+// ── Save ──────────────────────────────────────────────
+document.getElementById('saveBtn').addEventListener('click', () => {
+    const shapes=serializeShapes();
+    if (!shapes.length) { showToast('Nothing to save yet.'); return; }
+    const blob=new Blob([JSON.stringify({version:3,shapes},null,2)],{type:'application/json'});
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'drawing-project.json'});
+    a.click(); URL.revokeObjectURL(a.href);
+    showToast('Project saved ✓');
+});
+
+// ── Load ──────────────────────────────────────────────
+document.getElementById('loadBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', e => {
+    const file=e.target.files[0]; if(!file) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+        try {
+            const data=JSON.parse(ev.target.result);
+            if (!data.shapes) throw new Error();
+            pushUndo(); loadShapes(data.shapes);
+            showToast(`Loaded ${data.shapes.length} shape(s) ✓`);
+        } catch { showToast('Error: invalid project file.'); }
+    };
+    r.readAsText(file); e.target.value='';
+});
+
+// ── Export PNG — Canvas redraw ────────────────────────
+document.getElementById('exportBtn').addEventListener('click', () => {
+    const shapes = serializeShapes();
+    if (!shapes.length) { showToast('Nothing to export yet.'); return; }
+
+    const SCALE   = 3;   // high-res multiplier
+    const PAD     = 28;  // auto-crop padding in logical px
+    const FONT    = 'Segoe UI, system-ui, sans-serif';
+    const INK     = '#1e293b';
+    const DASH_ON = 8, DASH_OFF = 5;
+
+    // ── 1. Calculate bounding box across all shapes ──
+    let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+
+    shapes.forEach(d => {
+        // Label above rect adds height above the shape
+        const labelH = (d.type==='rect' && d.labelText) ? 44 : 0;
+        const l = parseFloat(d.left);
+        const t = parseFloat(d.top);
+        minX = Math.min(minX, l);
+        minY = Math.min(minY, t - labelH);
+        maxX = Math.max(maxX, l + d.width);
+        maxY = Math.max(maxY, t + d.height);
+    });
+
+    const cropL = Math.max(0, minX - PAD);
+    const cropT = Math.max(0, minY - PAD);
+    const cropW = (maxX - minX) + PAD * 2;
+    const cropH = (maxY - minY) + PAD * 2;
+
+    // ── 2. Create canvas ──
+    const cvs = document.createElement('canvas');
+    cvs.width  = Math.round(cropW * SCALE);
+    cvs.height = Math.round(cropH * SCALE);
+    const ctx  = cvs.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    ctx.scale(SCALE, SCALE);
+
+    // Offset so cropped region starts at (0,0)
+    ctx.translate(-cropL, -cropT);
+
+    // ── 3. Draw each shape ──
+    shapes.forEach(d => {
+        const l  = parseFloat(d.left);
+        const t  = parseFloat(d.top);
+        const w  = d.width;
+        const h  = d.height;
+        const cx = l + w/2;
+        const cy = t + h/2;
+        const rot = parseFloat(d.rotation) * Math.PI / 180;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rot);
+        ctx.translate(-w/2, -h/2);  // now 0,0 = top-left of shape
+
+        if (d.type === 'rect') {
+            drawRect(ctx, d, w, h, FONT, INK, DASH_ON, DASH_OFF);
+        } else {
+            drawArrow(ctx, d, w, h, FONT, INK, DASH_ON, DASH_OFF);
+        }
+
+        ctx.restore();
+    });
+
+    // ── 4. Download ──
+    const a = Object.assign(document.createElement('a'), {
+        href: cvs.toDataURL('image/png'),
+        download: 'drawing.png'
+    });
+    a.click();
+    showToast('PNG exported ✓');
+});
+
+// ── Draw rect onto canvas context ─────────────────────
+function drawRect(ctx, d, w, h, FONT, INK, DASH_ON, DASH_OFF) {
+    const lw = 3;
+
+    // Fill
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    // Border
+    ctx.strokeStyle = INK;
+    ctx.lineWidth   = lw;
+    ctx.strokeRect(lw/2, lw/2, w-lw, h-lw);
+
+    // Horizontal dashed divider at midpoint
+    ctx.save();
+    ctx.setLineDash([DASH_ON, DASH_OFF]);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.moveTo(lw, h/2);
+    ctx.lineTo(w-lw, h/2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Text
+    ctx.fillStyle = INK;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Top text
+    if (d.topText) {
+        ctx.font = `500 14px ${FONT}`;
+        ctx.fillText(clipText(ctx, d.topText, w * 0.82), w/2, h * 0.28);
+    }
+    // Bottom text
+    if (d.bottomText) {
+        ctx.font = `500 14px ${FONT}`;
+        ctx.fillText(clipText(ctx, d.bottomText, w * 0.82), w/2, h * 0.72);
+    }
+    // Label above (only if non-empty)
+    if (d.labelText) {
+        ctx.font = `700 15px ${FONT}`;
+        ctx.fillText(clipText(ctx, d.labelText, w * 1.4), w/2, -20);
+    }
+}
+
+// ── Draw arrow onto canvas context ────────────────────
+function drawArrow(ctx, d, w, h, FONT, INK, DASH_ON, DASH_OFF) {
+    const lw     = 3;
+    const headW  = Math.min(60, w * 0.35);
+    const wing   = 22;
+    const cy     = h / 2;
+    const shaft  = Math.max(4, h - wing * 2);
+    const hStart = Math.max(0, w - headW);
+
+    // Arrow path
+    ctx.beginPath();
+    ctx.moveTo(0,       cy - shaft/2);
+    ctx.lineTo(hStart,  cy - shaft/2);
+    ctx.lineTo(hStart,  0);
+    ctx.lineTo(w,       cy);
+    ctx.lineTo(hStart,  h);
+    ctx.lineTo(hStart,  cy + shaft/2);
+    ctx.lineTo(0,       cy + shaft/2);
+    ctx.closePath();
+
+    ctx.fillStyle   = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.lineWidth   = lw;
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+
+    // Dashed centre line
+    ctx.save();
+    ctx.setLineDash([DASH_ON, DASH_OFF]);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(w - 4, cy);
+    ctx.stroke();
+    ctx.restore();
+
+    // Text
+    const textW = Math.max(30, hStart - 10);
+    ctx.fillStyle    = INK;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font         = `500 14px ${FONT}`;
+
+    if (d.topText) {
+        ctx.fillText(clipText(ctx, d.topText, textW), textW/2 + 5, h * 0.32);
+    }
+    if (d.bottomText) {
+        ctx.fillText(clipText(ctx, d.bottomText, textW), textW/2 + 5, h * 0.68);
+    }
+}
+
+// ── Clip text to fit maxWidth with ellipsis ───────────
+function clipText(ctx, text, maxWidth) {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let t = text;
+    while (t.length > 1 && ctx.measureText(t + '…').width > maxWidth) {
+        t = t.slice(0, -1);
+    }
+    return t + '…';
+}
+</script>
+</body>
+</html>
