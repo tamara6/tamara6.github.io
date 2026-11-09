@@ -24,20 +24,16 @@
          <br /><br />
         Test 2 (out of 50) <input type="text" id= "test2" size="10"/>
          <br /><br />
-        Test 3 (out of 50) <input type="text" id= "test3" size="10"/>
+        Test 3 (out of 50) <input type="text" id= "test3" size="10"/> (if test 3 hasn't happened, yet, guess at what you might get to see what your grade might be)
          <br /><br />
-        Test 4 (out of 50) <input type="text" id= "test4" size="10"/>  (if test 4 hasn't happened, yet, guess at what you might get to see what your grade might be)
-         <br /><br />
+        
         
         Homework Points Total (out of 55) <input type="text" id= "hw" size="10"/>  (if we haven't had 11 homework assignments, yet, guess at how well you will do on the remaining ones to determine your homework total)
         
-         <br /><br />
-         
-        Copilot Survey (out of 5) <input type="text" id= "copilot" size="10"/>
         
          <br /><br />
         
-         Number of clicker points:  <input type="text" id= "clickerpoints" size="10"/><br />  (There will be 37 by the end of the semester)<br /></br>
+         Number of in-class points (these will be the clicker points + the few times that I collected  paper from you in class):  <input type="text" id= "clickerpoints" size="10"/><br />  (There will be 37 by the end of the semester)<br /></br>
         Which class are you in?  
         
  				<input type="radio" id="class1" name="class_time" value="835" checked>
@@ -52,7 +48,7 @@
 		<br />
         <h2>Your grade based on these numbers</h2>
         <p>
-        Total number of points: <input type="text" id="totalpoints" size="10"> out of 255 total.
+        Total number of points: <input type="text" id="totalpoints" size="10"> out of 205 total.  This is <input type="text" id="fromPoints" size="10"> percent.
         <br /><br />
         Percent Bonus from Clickers is <input type="text" id="clickerbonus" size="10"> 
         <br /><br />
@@ -79,7 +75,7 @@
 </table>
 
 
-
+</br></br></br>
         
         
 </div>
@@ -89,14 +85,13 @@ var elements = {
   test1: document.getElementById('test1'),
   test2: document.getElementById('test2'),
   test3: document.getElementById('test3'),
-  test4: document.getElementById('test4'),
   hw: document.getElementById('hw'),
-  copilot: document.getElementById('copilot'),
   clickerpoints: document.getElementById('clickerpoints'),
   clickerbonus: document.getElementById('clickerbonus'),
   percentgrade: document.getElementById('percentgrade'),
   letter: document.getElementById('letter'),
-  totalpoints: document.getElementById('totalpoints')
+  totalpoints: document.getElementById('totalpoints'),
+  fromPoints: document.getElementById('fromPoints'),
 };
 
 var gradescale = {
@@ -116,9 +111,7 @@ var gradeLevels = [
 elements.test1.addEventListener('keyup', setGrades);
 elements.test2.addEventListener('keyup', setGrades);
 elements.test3.addEventListener('keyup', setGrades);
-elements.test4.addEventListener('keyup', setGrades);
 elements.hw.addEventListener('keyup', setGrades);
-elements.copilot.addEventListener('keyup', setGrades);
 elements.clickerpoints.addEventListener('keyup', setGrades);
 
 //for the radio buttons
@@ -150,14 +143,12 @@ function setGrades () {
     test1: parseFloat(elements.test1.value),
     test2: parseFloat(elements.test2.value),
     test3: parseFloat(elements.test3.value),
-    test4: parseFloat(elements.test4.value),
     hw: parseFloat(elements.hw.value),
-    copilot: parseFloat(elements.copilot.value),
     clickerpoints: parseFloat(elements.clickerpoints.value),
-    possible: 255.0,
+    possible: 205.0,
   };
   
-  grade.obtained = grade.test1 + grade.test2 + grade.test3 + grade.test4 + grade.hw + grade.copilot;
+  grade.obtained = grade.test1 + grade.test2 + grade.test3 + grade.hw;
   grade.clickerbonus = calcClicker(grade.clickerpoints, classtime);
   
   //grade.percentage = (((grade.obtained / grade.possible) * 100) + grade.clickerbonus).toFixed(1);
@@ -203,6 +194,7 @@ function setGrades () {
 	
   //grade.letter = getLetterGrade(grade.percentage);
 
+  elements.fromPoints.value = grade.fromPoints.toFixed(1);
   elements.percentgrade.value = grade.percentage;
   //elements.letter.value = grade.letter;
   elements.letter.value = getLetterGrade(grade.percentage);
