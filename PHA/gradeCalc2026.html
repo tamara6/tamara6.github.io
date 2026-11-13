@@ -197,12 +197,12 @@ function setGrades () {
 	
   //grade.letter = getLetterGrade(grade.percentage);
 
-  elements.fromPoints.value = grade.fromPoints.toFixed(1);
+  elements.fromPoints.value = grade.fromPoints.toFixed(2);
   elements.percentgrade.value = grade.percentage;
   //elements.letter.value = grade.letter;
   elements.letter.value = getLetterGrade(grade.percentage);
   elements.totalpoints.value = grade.obtained.toFixed(1);
-  elements.clickerbonus.value = grade.clickerbonus.toFixed(1);
+  elements.clickerbonus.value = grade.clickerbonus.toFixed(2);
   //elements.agrade.value = grade.togetA;
  // elements.agrade.value = isPossible(grade.togetA);
   //elements.bgrade.value = isPossible(grade.togetB);
