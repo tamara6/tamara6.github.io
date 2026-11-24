@@ -30,6 +30,9 @@
         
         Homework Points Total (out of 55) <input type="text" id= "hw" size="10"/>  (if we haven't had 11 homework assignments, yet, guess at how well you will do on the remaining ones to determine your homework total)
         
+         <br /><br />
+        
+        Did you come the Monday before Thanksgiving and get 5 bonus points?  If so, enter 5 here, or leave it as 0 <input type="text" id= "tgbonus" size="10" value="0"/>
         
          <br /><br />
         
@@ -88,6 +91,7 @@ var elements = {
   test1: document.getElementById('test1'),
   test2: document.getElementById('test2'),
   test3: document.getElementById('test3'),
+  tgbonus: document.getElementById('tgbonus'),
   hw: document.getElementById('hw'),
   clickerpoints: document.getElementById('clickerpoints'),
   clickerbonus: document.getElementById('clickerbonus'),
@@ -114,6 +118,7 @@ var gradeLevels = [
 elements.test1.addEventListener('keyup', setGrades);
 elements.test2.addEventListener('keyup', setGrades);
 elements.test3.addEventListener('keyup', setGrades);
+elements.tgbonus.addEventListener('keyup', setGrades);
 elements.hw.addEventListener('keyup', setGrades);
 elements.clickerpoints.addEventListener('keyup', setGrades);
 
@@ -146,12 +151,13 @@ function setGrades () {
     test1: parseFloat(elements.test1.value),
     test2: parseFloat(elements.test2.value),
     test3: parseFloat(elements.test3.value),
+    tgbonus: parseFloat(elements.tgbonus.value),
     hw: parseFloat(elements.hw.value),
     clickerpoints: parseFloat(elements.clickerpoints.value),
     possible: 205.0,
   };
   
-  grade.obtained = grade.test1 + grade.test2 + grade.test3 + grade.hw;
+  grade.obtained = grade.test1 + grade.test2 + grade.test3 + grade.hw + grade.tgbonus;
   grade.clickerbonus = calcClicker(grade.clickerpoints, classtime);
   
   //grade.percentage = (((grade.obtained / grade.possible) * 100) + grade.clickerbonus).toFixed(1);
