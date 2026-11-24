@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Half Life Simulator</title>
+</head>
+
+<body style="font-family:sans-serif; font-size:15px;">
+
+<H1 style = "text-align:center;">Half Life Simulator</H1>
+
+<div style = "max-width: 850px; margin: auto;">
+
+<p>This is a simulation of the radioactive decay of 110 radioactive nuclei.
+
+They all start off as the parent nucleus (shown in dark red). With each time step some of the nuclei decay (they send out an alpha particle or beta particle and then change into a daughter nucleus - shown in blue).  Since it is impossible to predict when each nucleus will decay, each time through the simulator will be unique!</p>
+<p>
+<strong>Instructions:</strong>
+<ol>
+<li>Choose a half-life
+<li>Click the Step button.  Each step advances the decay of the nuclei.  
+<li>Make a table with the time step and the number of parent nuclei remaining.  You can then use a spread sheet (like Excel) to plot your data to get the decay graph. From that graph you can estimate the half-life.
+</ol>
+</p>
+
+
+</div>
+
+
+<div style = "text-align:center;">
+	
+    <canvas id="myCanvas" width="700" height="300"></canvas>
+    
+    <p></p>
+ 
+	<div id="snakecolor">
+	<label>Choose the half-life: 
+		<input type="radio" name="reference" value="Small" >Short 
+    	<input type="radio" name="reference" value="Large" checked="checked">Long
+    </label>
+	</div>
+	
+	<p></p>
+	
+	<div id="buttons">
+      <input type="button" id="stepforward" value="Step >>" onclick="stepForward()">
+      <input type="button" id="reset" value="Start Over" onclick="reset()">
+    </div>
+
+</div>
+
+
+<script>
+  
+//started at 620 and 450
+// Simulation first posted on 4-24-2017 - written by Andrew Duffy
+
+
+     
+     
+     
+      function setReference(newReference)
+      {
+        reference = newReference;
+        reset();
+     }
+
+
+      function play() {
+        if (hasStarted == 0) setReference(displayRadioValue()); //if it hasn't started running yet, set the decay rate
+        //setReference(displayRadioValue())
+        window.clearTimeout(timer);
+        hasStarted = 1;
+        runFlag = 1;
+        runMotion();
+
+      }
+
+      function pause() {
+        window.clearTimeout(timer);
+        runFlag = 0;
+
+      }
+
+      function stepForward() {
+        if (hasStarted == 0) setReference(displayRadioValue()); //if it hasn't started running yet, set the decay rate
+        window.clearTimeout(timer);
+        hasStarted = 1;
+        runFlag = 1;
+        drawMotion();
+
+      }
+
+	  
+	  
+      function reset() {
+        window.clearTimeout(timer);
+        index = -1;
+        time = 0.0;
+        counter = -1;
+        for (var i=0; i<nNuclei; i++) {
+         nuclei[i].active = 1;   // 1 if not decayed yet
+        }
+        
+        nRemain = nNuclei;
+
+        xPos = xBase;
+        hasStarted = 0;
+        runFlag = 1;
+        drawMotion();
+
+//        drawMotion();
+
+      }
+      
+      
+      function displayRadioValue() { 
+            var ele = document.getElementsByName('reference'); 
+            for(i = 0; i < ele.length; i++) { 
+                if(ele[i].checked)
+                	switch (ele[i].value) {
+                		case "Small":
+    						return "0.16";
+    						break;
+    					case "Medium":
+    						return "0.16";
+    						break;
+    					case "Large":
+    						return "0.12";
+    						break;
+    					default:
+    						return ele[i].value;
+                	}
+                   //return ele[i].value;
+            } 
+        } 
+
+
+      var canvas = document.getElementById("myCanvas");
+      var context = canvas.getContext("2d");
+      var index = -1;
+      //var xBase = 36;     // for the drawing
+      xBase = 50
+      var xBase2 = 90;   // for the graph
+      var yBase = 440;     // for the drawing
+      var yBase2 = 50;    // for the graph
+            
+      var xInit = 37;
+      var graphType = 1;
+      var graphTitle = 'Percentage of undecayed nuclei';
+      var yAxisTitle = '%';
+      var xAxisTitle = ' t(s)';
+      var slope = 0.4;
+      var yIncrement = 20;
+      var yNumDecimals = 0;
+      var xIncrement = 10;
+      var xNumDecimals = 0;
+      var yStart = yBase+160;
+      var plotColor = '#ff00ff';
+      
+      var parentColor = 'DarkRed'
+      var daughterColor = 'lightblue'
+      let table = document.querySelector("table");
+      
+
+      var vSource = 0.0;
+      var xSource = -20.0;
+      var vObserver = 0.0;
+      var xObserver = +20.0;
+      var x1 = xSource;
+      var x2 = xObserver;
+      var sourceColor = "#55f";
+      var vSound = 50;
+
+      var reference = 0.12;
+      counter = -1;
+      //var maxCount = 40; // how wide the rows of nuclei are
+      var maxCount = 11;
+
+      //var nNuclei = 400;  // number of nuclei
+      nNuclei = 110;  // number of nuclei
+      var nuclei = new Array(nNuclei);
+      for (var i=0; i<nNuclei; i++) {
+         nuclei[i] = {};
+         nuclei[i].active = 1;   // 1 if not decayed yet
+      }
+      var nRemain = nNuclei;
+      var nLeft = new Array(nNuclei);
+      for (var i=0; i<nNuclei; i++) {
+         nLeft[i] = {};
+         nLeft[i].value = 0;   // 1 if not decayed yet
+      }
+
+	
+
+      //var radius = 5; //radius of the nuclei circle
+      var radius = 8;
+      var time = 0.0;
+      var x = 0.0;
+      var graphY = 5;
+      var graphX = 10;
+      var timer;
+      var runFlag = 1;
+      var hasStarted = 0;
+
+      drawMotion();
+
+    function drawMotion() {
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag );
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag + " xPos = " + xPos);
+
+
+      if ((runFlag == 1) && (index < 100)) {    //      run if runFlag equal 1, not if equal 0
+        // clear
+        
+        
+        
+        
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        index = index + 1;
+        time = index;
+
+
+        // set background color for the entire thing - color of large background rectangle
+           //context.fillStyle = "#ffd";
+           context.fillStyle = "floralwhite";
+           //context.fillRect(0, 0, canvas.width, canvas.height);
+           context.fillRect(0, 0, canvas.width, canvas.height);
+           context.strokeStyle = "red";
+           context.strokeRect(0, 0, canvas.width, canvas.height);
+
+
+        // draw the nuclei
+
+           //yBase = 300;
+           yBase = yBase2
+           counter = -1;
+           for (i = 0; i < nNuclei; i++) {
+             counter = counter + 1;
+             if (counter >= maxCount) {
+               counter = 0;
+               //yBase = yBase + 14;
+               yBase = yBase + 20; //how far apart the nuclei are vertically
+             }
+             context.beginPath();
+             //xBase+14+counter is the horizontal position of this nucleus
+             //ctx.arc(x, y, radius, startAngle, endAngle [, anticlockwise]);
+             context.arc(xBase+20*counter, yBase, radius, 0, 2 * Math.PI, false);
+             //context.fillStyle = 'DarkRed';
+             context.fillStyle = parentColor;
+             if (nuclei[i].active == 0) context.fillStyle = daughterColor;
+//             context.strokeStyle = 'blue';
+             context.fill();
+//             context.stroke();
+
+           }
+
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'left';
+           context.textBaseline = 'middle';
+           
+           xBaseWords = xBase + (20*maxCount)+100
+		   
+
+			//where time is shown
+           var tLabel = 'Time = ';
+           tLabel = tLabel + time + " step";
+           if (time !== 1) tLabel = tLabel + "s";
+           context.textAlign = 'left';
+           context.fillStyle = 'black';
+           //context.fillText(tLabel, xBase2+40*graphX+12,yBase2);
+           context.fillText(tLabel,xBaseWords,yBase2);
+
+			//where N is shown
+			
+           var nTotalLabel = 'Total nuclei = ';
+           context.beginPath();
+           //context.arc(xBase2+40*graphX+20, yBase2+30, radius, 0, 2 * Math.PI, false);
+           context.arc(xBaseWords+radius, yBase2+60, radius, 0, 2 * Math.PI, false);
+		   context.fillStyle = parentColor;
+		   context.fill();
+		   context.textAlign = 'left'
+		   context.fillStyle = 'black';
+           nTotalLabel = nTotalLabel + nNuclei;
+           context.fillText("+", xBaseWords+radius+10,yBase2+60);
+           context.beginPath();
+           context.arc(xBaseWords+radius+32, yBase2+60, radius, 0, 2 * Math.PI, false);
+		   context.fillStyle = daughterColor;
+		   context.fill();
+           context.textAlign = 'left';
+           context.fillStyle = 'black';
+           context.fillText(nTotalLabel, xBaseWords+radius+50,yBase2+60);
+			
+			//where N is shown
+           var nRemainLabel = 'Number of parent nuclei = ';
+           context.beginPath();
+           context.arc(xBaseWords+radius, yBase2+90, radius, 0, 2 * Math.PI, false);
+		   context.fillStyle = parentColor;
+		   context.fill();
+           nRemainLabel = nRemainLabel + nRemain;
+           context.textAlign = 'left';
+           context.fillStyle = 'black';
+           context.fillText(nRemainLabel, xBaseWords+radius+20,yBase2+90);
+
+           nLeft[index].value = nRemain;
+           
+           //where number of daughter nucleus is shown
+           var nDaughterLabel = 'Number of daughter nuclei = ';
+           context.beginPath();
+           context.arc(xBaseWords+radius, yBase2+120, radius, 0, 2 * Math.PI, false);
+		   context.fillStyle = daughterColor;
+		   context.fill();
+           nDaughterLabel = nDaughterLabel + (nNuclei - nRemain);
+           context.textAlign = 'left';
+           context.fillStyle = 'black';
+           context.fillText(nDaughterLabel, xBaseWords+radius+20,yBase2+120);
+/*           
+           //snake
+           var nSnakeLabel = 'Snake ';
+           context.beginPath();
+           context.arc(xBaseWords+radius, yBase2+150, radius, 0, 2 * Math.PI, false);
+		   context.fillStyle = daughterColor;
+		   //context.fillStyle = getRadioValSnake();
+		   context.fill();
+		   context.beginPath();
+           nSnakeLabel = nSnakeLabel + displayRadioValue() + " " + reference + " " + hasStarted;
+           context.textAlign = 'left';
+           context.fillStyle = 'black';
+           context.fillText(nSnakeLabel, xBaseWords+radius+20,yBase2+150);
+*/           
+           
+
+
+        // decay the nuclei
+			
+           for (i = 0; i < nNuclei; i++) {
+             if (nuclei[i].active == 1) {
+               if (Math.random() < reference) {
+                 nuclei[i].active = 0;
+                 nRemain = nRemain - 1;
+               }
+             }
+            }
+
+
+			
+      }
+    }
+
+    function runMotion() {
+        drawMotion();
+        if (runFlag == 1) {
+          //this is where how fast it runs is set....
+          //timer = window.setTimeout(runMotion, 1000/10);
+          timer = window.setTimeout(runMotion, 1000);
+        }
+      }
+      
+
+
+
+  </script>
+  
+  
+<div style = "max-width: 850px; margin: auto;">
+</br></br></br>
+  
+<hr>
+
+<p style = "text-align:left;">Written by Andrew Duffy.  Modified by Tamara Snyder</p>
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">work</span> by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Andrew Duffy</span> is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.<br />This original version of this simulation can be found in the collection at <a xmlns:dct="http://purl.org/dc/terms/" href="http://physics.bu.edu/~duffy/classroom.html" rel="dct:source">http://physics.bu.edu/~duffy/classroom.html</a>.
+</div>  
+
+</body>
+</html>
